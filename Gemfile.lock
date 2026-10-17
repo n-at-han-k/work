@@ -5,6 +5,13 @@ GEM
       console (~> 1.29)
       fiber-annotation
       io-event (~> 1.21)
+    async-bus (0.4.0)
+      async
+      io-endpoint
+      io-stream
+      msgpack
+    async-container (0.38.0)
+      async (~> 2.44)
     async-http (0.105.0)
       async (>= 2.35.1)
       async-pool (~> 0.12)
@@ -16,6 +23,27 @@ GEM
       protocol-url (~> 0.2)
     async-pool (0.12.0)
       async (>= 2.0)
+    async-service (0.25.0)
+      async
+      async-container (~> 0.34)
+      string-format (~> 0.2)
+    async-service-supervisor (0.21.0)
+      async (~> 2.38)
+      async-bus
+      async-service (~> 0.15)
+      async-utilization (~> 0.5)
+      io-endpoint
+      memory (~> 0.7)
+      memory-leak (~> 0.10)
+      process-metrics
+    async-utilization (0.5.0)
+      console (~> 1.0)
+    bake (0.25.0)
+      bigdecimal
+      samovar (~> 2.1)
+    base64 (0.3.0)
+    benchmark-ips (2.15.1)
+    bigdecimal (4.1.3)
     concurrent-ruby (1.3.8)
     console (1.38.0)
       fiber-annotation
@@ -37,9 +65,20 @@ GEM
     io-event (1.22.1)
     io-stream (0.14.0)
       openssl (>= 3.3)
-    json (3.1.0)
+    json (2.21.2)
     logger (1.7.0)
+    memory (0.12.0)
+      bake (~> 0.15)
+      console
+      msgpack
+    memory-leak (0.10.3)
+      process-metrics (>= 0.10.1)
+    msgpack (1.8.5)
+    mustermann (3.1.1)
     openssl (4.0.2)
+    process-metrics (0.15.0)
+      console (~> 1.8)
+      json (~> 2)
     protocol-hpack (1.5.1)
     protocol-http (0.72.0)
     protocol-http1 (0.41.0)
@@ -47,11 +86,40 @@ GEM
     protocol-http2 (0.29.1)
       protocol-hpack (~> 1.4)
       protocol-http (~> 0.62)
+    protocol-rack (0.23.0)
+      console (~> 1.0)
+      io-stream (>= 0.10)
+      protocol-http (~> 0.58)
+      rack (>= 1.0)
     protocol-url (0.19.0)
     rack (3.2.7)
+    rack-protection (4.2.1)
+      base64 (>= 0.1.0)
+      logger (>= 1.6.0)
+      rack (>= 3.0.0, < 4)
+    rack-session (2.1.2)
+      base64 (>= 0.1.0)
+      rack (>= 3.0.0)
     ratalada (4.0.0)
       dry-configurable (~> 1.4)
       rack (~> 3.0)
+    ratalada-contrib (4.0.0)
+      mustermann (> 2)
+      ratalada (~> 4.0)
+    ratalada-sinatra (4.0.0)
+      ratalada (~> 4.0)
+      sinatra
+    samovar (2.5.1)
+      console (~> 1.0)
+    sinatra (4.2.1)
+      logger (>= 1.6.0)
+      mustermann (~> 3.0)
+      rack (>= 3.0.0, < 4)
+      rack-protection (= 4.2.1)
+      rack-session (>= 2.0.0, < 3)
+      tilt (~> 2.0)
+    string-format (0.2.0)
+    tilt (2.9.0)
     zeitwerk (2.8.3)
 
 PLATFORMS
@@ -65,9 +133,19 @@ PLATFORMS
 
 DEPENDENCIES
   async
+  async-container
   async-http
+  async-service
+  async-service-supervisor
+  benchmark-ips
+  memory-leak
+  process-metrics
   protocol-http
+  protocol-rack
   ratalada (~> 4.0)
+  ratalada-contrib
+  ratalada-sinatra
+  sinatra
 
 BUNDLED WITH
    2.7.2
