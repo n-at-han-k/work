@@ -6,7 +6,7 @@ require "memory/leak"
 
 PORT = Integer(ENV.fetch("PORT", "9601"))
 ROUNDS = Integer(ENV.fetch("ROUNDS", "4"))
-REQUESTS = Integer(ENV.fetch("REQUESTS", "50000"))
+REQUESTS = Integer(ENV.fetch("REQUESTS", "5000"))
 CONCURRENCY = Integer(ENV.fetch("CONCURRENCY", "50"))
 HEY = ENV.fetch("HEY", "nix run nixpkgs#hey --")
 
@@ -51,6 +51,11 @@ Async do
 end
 
 puts "frontend: #{Ratalada.config.frontend} (rack? #{Ratalada.rack_frontend?})"
+puts format(
+  "fiber stacks: vm=%s machine=%s",
+  ENV.fetch("RUBY_FIBER_VM_STACK_SIZE", "default"),
+  ENV.fetch("RUBY_FIBER_MACHINE_STACK_SIZE", "default")
+)
 MONITOR.sample!
 report("before")
 

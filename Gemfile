@@ -16,3 +16,7 @@ gem "sinatra"
 gem "process-metrics"
 gem "memory-leak"
 gem "benchmark-ips"
+
+gem "opentelemetry-sdk"
+gem "opentelemetry-metrics-sdk"
+gem "opentelemetry-exporter-otlp-metrics"

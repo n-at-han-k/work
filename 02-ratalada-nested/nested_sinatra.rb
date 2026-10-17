@@ -1,0 +1,85 @@
+require "ratalada/async"
+require "ratalada/sinatra"
+require "async/http/client"
+require "async/http/endpoint"
+require "process/metrics"
+require "memory/leak"
+
+PORT = Integer(ENV.fetch("PORT", "9602"))
+ROUNDS = Integer(ENV.fetch("ROUNDS", "4"))
+REQUESTS = Integer(ENV.fetch("REQUESTS", "5000"))
+CONCURRENCY = Integer(ENV.fetch("CONCURRENCY", "50"))
+NESTED = Integer(ENV.fetch("NESTED", "168"))
+HEY = ENV.fetch("HEY", "nix run nixpkgs#hey --")
+
+MONITOR = Memory::Leak::Monitor.new(Process.pid, threshold_size: 10 * 1048576, increase_limit: 3)
+
+def memory = Process::Metrics::General.capture(pid: Process.pid).fetch(Process.pid).memory
+
+def report(label)
+  snapshot = memory
+
+  puts format(
+    "  %-9s rss=%6.1fMB anon=%6.1fMB ruby_heap=%5.1fMB maps=%4d increases=%d/%d leaking=%p",
+    label,
+    snapshot.resident_size / 1048576.0,
+    snapshot.anonymous_size / 1048576.0,
+    GC.stat[:heap_allocated_pages] * GC::INTERNAL_CONSTANTS[:HEAP_PAGE_SIZE] / 1048576.0,
+    snapshot.map_count,
+    MONITOR.increase_count,
+    MONITOR.increase_limit,
+    MONITOR.leaking?
+  )
+end
+
+LAYERS = NESTED.times.map do |i|
+  Class.new(Sinatra::Base) do
+    enable :sessions
+
+    get "/layer#{i}" do
+      "layer #{i}"
+    end
+  end
+end
+
+Thread.new do
+  Server.run(host: "127.0.0.1", port: PORT) do
+    LAYERS.each { |layer| use layer }
+
+    get "/" do
+      "ok"
+    end
+  end
+end
+
+sleep 1
+
+Async do
+  client = Async::HTTP::Client.new(Async::HTTP::Endpoint.parse("http://127.0.0.1:#{PORT}"))
+
+  unless client.get("/").read == "ok"
+    raise "port #{PORT} is serving something other than this example"
+  end
+
+  client.close
+end
+
+puts "frontend: #{Ratalada.config.frontend} (rack? #{Ratalada.rack_frontend?})"
+puts "#{NESTED} Sinatra apps chained as middleware; GET / walks all of them"
+puts format(
+  "fiber stacks: vm=%s machine=%s",
+  ENV.fetch("RUBY_FIBER_VM_STACK_SIZE", "default"),
+  ENV.fetch("RUBY_FIBER_MACHINE_STACK_SIZE", "default")
+)
+MONITOR.sample!
+report("before")
+
+ROUNDS.times do |round|
+  system("#{HEY} -n #{REQUESTS} -c #{CONCURRENCY} http://127.0.0.1:#{PORT}/ > /dev/null")
+  MONITOR.sample!
+  report("round #{round}")
+end
+
+GC.start
+MONITOR.sample!
+report("after GC")
